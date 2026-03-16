@@ -58,26 +58,29 @@ export default function App() {
       // Initialize results with suggestions but no images yet to show placeholders
       setResults(suggestions.map(s => ({ ...s, imageUrl: "" })));
 
-      // Generate images one by one to show progress
-      for (let i = 0; i < suggestions.length; i++) {
-        // Add a small delay between requests to avoid hitting rate limits
-        if (i > 0) await new Promise(resolve => setTimeout(resolve, 1500));
+      // Generate images in parallel with staggered starts to speed up the process
+      const generationPromises = suggestions.map(async (suggestion, i) => {
+        // Stagger the start of each request slightly (500ms) to avoid hitting rate limits instantly
+        await new Promise(resolve => setTimeout(resolve, i * 500));
         
-        const suggestion = suggestions[i];
         try {
           const imageUrl = await generateHairstyleImage(base64Data, mimeType, suggestion.name, suggestion.description);
           
           if (imageUrl) {
-            setResults(prev => prev.map((item, idx) => 
-              idx === i ? { ...item, imageUrl } : item
-            ));
+            setResults(prev => {
+              const newResults = [...prev];
+              newResults[i] = { ...newResults[i], imageUrl };
+              return newResults;
+            });
           }
         } catch (err) {
           console.error(`Failed to generate image for style ${i}`, err);
-          // Keep the placeholder or show an error state for this specific card
         }
-        setGenerationProgress(((i + 1) / suggestions.length) * 100);
-      }
+      });
+
+      // Wait for all generations to complete (or fail)
+      await Promise.all(generationPromises);
+      setGenerationProgress(100);
 
     } catch (err: any) {
       console.error(err);
