@@ -1,0 +1,5 @@
+{
+  "name": "HairVision",
+  "description": "KI-gestützte Frisurenberatung: Lade ein Foto hoch und entdecke 9 perfekt auf dich abgestimmte Haarschnitte inklusive Profi-Anweisungen für deinen Friseur.",
+  "requestFramePermissions": []
+}
