@@ -55,20 +55,26 @@ export default function App() {
 
       const generatedResults: GeneratedResult[] = [];
       
+      // Initialize results with suggestions but no images yet to show placeholders
+      setResults(suggestions.map(s => ({ ...s, imageUrl: "" })));
+
       // Generate images one by one to show progress
       for (let i = 0; i < suggestions.length; i++) {
         // Add a small delay between requests to avoid hitting rate limits
         if (i > 0) await new Promise(resolve => setTimeout(resolve, 1500));
         
         const suggestion = suggestions[i];
-        const imageUrl = await generateHairstyleImage(base64Data, mimeType, suggestion.name, suggestion.description);
-        
-        if (imageUrl) {
-          generatedResults.push({
-            ...suggestion,
-            imageUrl
-          });
-          setResults([...generatedResults]);
+        try {
+          const imageUrl = await generateHairstyleImage(base64Data, mimeType, suggestion.name, suggestion.description);
+          
+          if (imageUrl) {
+            setResults(prev => prev.map((item, idx) => 
+              idx === i ? { ...item, imageUrl } : item
+            ));
+          }
+        } catch (err) {
+          console.error(`Failed to generate image for style ${i}`, err);
+          // Keep the placeholder or show an error state for this specific card
         }
         setGenerationProgress(((i + 1) / suggestions.length) * 100);
       }
@@ -263,25 +269,34 @@ export default function App() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    onClick={() => setSelectedResult(result)}
-                    className="group cursor-pointer space-y-4"
+                    onClick={() => result.imageUrl && setSelectedResult(result)}
+                    className={`group space-y-4 ${result.imageUrl ? 'cursor-pointer' : 'cursor-wait'}`}
                   >
                     <div className="aspect-[3/4] rounded-3xl overflow-hidden shadow-lg relative bg-black/5">
-                      <img 
-                        src={result.imageUrl} 
-                        alt={result.name} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                        <Star size={14} className="text-brand-accent fill-brand-accent" />
-                        <span className="text-sm font-bold">{result.rating}/10</span>
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-                        <span className="text-white font-medium flex items-center gap-2">
-                          Details ansehen <ChevronRight size={16} />
-                        </span>
-                      </div>
+                      {result.imageUrl ? (
+                        <>
+                          <img 
+                            src={result.imageUrl} 
+                            alt={result.name} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                            <Star size={14} className="text-brand-accent fill-brand-accent" />
+                            <span className="text-sm font-bold">{result.rating}/10</span>
+                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+                            <span className="text-white font-medium flex items-center gap-2">
+                              Details ansehen <ChevronRight size={16} />
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-8 text-center">
+                          <Loader2 className="animate-spin text-brand-accent" size={32} />
+                          <p className="text-xs font-bold uppercase tracking-widest opacity-30">Wird generiert...</p>
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <h3 className="text-xl font-bold">{result.name}</h3>
