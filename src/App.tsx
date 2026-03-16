@@ -91,6 +91,14 @@ export default function App() {
     }
   };
 
+  const reset = () => {
+    setImage(null);
+    setResults([]);
+    setSelectedResult(null);
+    setError(null);
+    setGenerationProgress(0);
+  };
+
   const handleDownload = async (url: string, name: string) => {
     try {
       const response = await fetch(url);
