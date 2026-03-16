@@ -93,7 +93,10 @@ export const generateHairstyleImage = async (
 ): Promise<string | null> => {
   const model = "gemini-2.5-flash-image";
   const prompt = `Apply the following hairstyle to the person in the image: ${styleName}. ${description}. 
-  The person's face and features should remain recognizable and unchanged, only the hair should be modified to match the requested style. 
+  CRITICAL REQUIREMENT: The person's face, facial features, skin tone, and bone structure MUST remain 100% ORIGINAL and UNCHANGED. 
+  ONLY the hair should be modified to match the requested style. 
+  Do not alter the eyes, nose, mouth, or any other facial characteristics. 
+  The final image must look like the exact same person from the original photo, just with a different hairstyle. 
   The result should look like a realistic professional photograph.`;
 
   const response = await withRetry(() => ai.models.generateContent({

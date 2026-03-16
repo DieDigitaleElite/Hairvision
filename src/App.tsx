@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { Upload, Camera, Scissors, Star, Info, ChevronRight, Loader2, CheckCircle2, RefreshCcw } from 'lucide-react';
+import { Upload, Camera, Scissors, Star, Info, ChevronRight, Loader2, CheckCircle2, RefreshCcw, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { analyzeFaceAndSuggestStyles, generateHairstyleImage, GeneratedResult, HairstyleSuggestion } from './services/geminiService';
 
@@ -91,12 +91,21 @@ export default function App() {
     }
   };
 
-  const reset = () => {
-    setImage(null);
-    setResults([]);
-    setSelectedResult(null);
-    setError(null);
-    setGenerationProgress(0);
+  const handleDownload = async (url: string, name: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `${name.replace(/\s+/g, '-').toLowerCase()}-hairstyle.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("Download failed", err);
+    }
   };
 
   return (
@@ -284,6 +293,18 @@ export default function App() {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                             referrerPolicy="no-referrer"
                           />
+                          <div className="absolute top-4 left-4 flex gap-2">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownload(result.imageUrl, result.name);
+                              }}
+                              className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-brand-primary hover:text-brand-accent shadow-sm transition-colors"
+                              title="Bild herunterladen"
+                            >
+                              <Download size={18} />
+                            </button>
+                          </div>
                           <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
                             <Star size={14} className="text-brand-accent fill-brand-accent" />
                             <span className="text-sm font-bold">{result.rating}/10</span>
@@ -337,6 +358,23 @@ export default function App() {
                   className="w-full h-full object-cover" 
                   referrerPolicy="no-referrer"
                 />
+                <div className="absolute top-6 right-6 flex gap-3 md:hidden">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(selectedResult.imageUrl, selectedResult.name);
+                    }}
+                    className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/40 transition-colors"
+                  >
+                    <Download size={20} />
+                  </button>
+                  <button 
+                    onClick={() => setSelectedResult(null)}
+                    className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/40 transition-colors"
+                  >
+                    <RefreshCcw className="rotate-45" size={20} />
+                  </button>
+                </div>
                 <button 
                   onClick={() => setSelectedResult(null)}
                   className="absolute top-6 left-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/40 transition-colors md:hidden"
@@ -354,12 +392,21 @@ export default function App() {
                     </div>
                     <h2 className="text-4xl font-serif font-bold">{selectedResult.name}</h2>
                   </div>
-                  <button 
-                    onClick={() => setSelectedResult(null)}
-                    className="hidden md:flex w-12 h-12 bg-black/5 rounded-full items-center justify-center hover:bg-black/10 transition-colors"
-                  >
-                    <RefreshCcw size={20} className="rotate-45" />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => handleDownload(selectedResult.imageUrl, selectedResult.name)}
+                      className="hidden md:flex w-12 h-12 bg-brand-accent/10 text-brand-accent rounded-full items-center justify-center hover:bg-brand-accent/20 transition-colors"
+                      title="Bild herunterladen"
+                    >
+                      <Download size={20} />
+                    </button>
+                    <button 
+                      onClick={() => setSelectedResult(null)}
+                      className="hidden md:flex w-12 h-12 bg-black/5 rounded-full items-center justify-center hover:bg-black/10 transition-colors"
+                    >
+                      <RefreshCcw size={20} className="rotate-45" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-6">
